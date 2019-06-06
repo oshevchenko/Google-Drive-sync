@@ -17,6 +17,7 @@ import os
 import httplib2
 import sys
 import re
+import logging
 
 from apiclient import discovery
 from oauth2client import client
@@ -396,6 +397,9 @@ def start_sync():
         folder_id = parents_id[last_dir]
         service.files().delete(fileId=folder_id).execute()
 
+#
+#
+#
 def main():
   parser_desc="One-way sync of a local folder to a folder on Google Drive"
   parser = argparse.ArgumentParser(description=parser_desc)
@@ -445,6 +449,35 @@ def main():
     print( 'Just to make things easier on me, only folder names matchng /^[a-z0-9 _-]+$/ are allowed. "{}" does not match. Quitting now.'.format(kwargs.get('folder_name')))
     sys.exit(1)
 
+  settings = {
+    'local_folder': kwargs.get('local_folder')
+    ,'folder_name': kwargs.get('folder_name')
+    ,'debug_level': kwargs.get('log_level')
+    ,'log_file': kwargs.get('log_file')
+  }
+
+  log_setup = {
+    'format': '[%(levelname)s] %(message)s',
+    'level' : settings['log_level']
+  }
+
+  if settings['log_file'] is not None:
+    log_setup['filename'] = settings['log_file']
+    log_setup['filemode'] = 'w'
+
+  logging.addLevelName(5, 'DEBUG2')
+  logging.addLevelName(15, 'VERBOSE')
+  logging.basicConfig(**log_setup)
+  setattr(logging, 'debug2', lambda *args: logging.log(5, *args))
+  setattr(logging, 'verbose', lambda *args: logging.log(15, *args))
+
+  # Only if we don't need a log file; otherwise we get double
+  # prints to stdout
+  if log_file is not None:
+    st_fmt = logging.Formatter(log_setup['format'])
+    stream = logging.StreamHandler(sys.stdout)
+    stream.setFormatter(st_fmt)
+    logging.getLogger().addHandler(stream)
 
   # start_sync(kwargs)
 
