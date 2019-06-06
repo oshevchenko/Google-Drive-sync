@@ -1,13 +1,20 @@
 #!/usr/bin/python3
 
 """Example cooment to make pylint stop giving me errors."""
+# TODO Make  command line arguments for folder path and name
+# TODO Add logging
+# TODO Add failure notifications
 
+
+import argparse
 import datetime
 import hashlib
 import mimetypes
 import time
 import os
 import httplib2
+import sys
+import re
 
 from apiclient import discovery
 from oauth2client import client
@@ -28,8 +35,8 @@ CLIENT_SECRET_FILE = 'client_secret.json'
 APPLICATION_NAME = 'Drive Sync'
 
 # Declare full path to folder and folder name
-FULL_PATH = r'PUT YOUR FULL FOLDER PATH HERE'
-DIR_NAME = 'PUT YOUR FOLDER NAME HERE'
+FULL_PATH = r'/opt/Google-Drive-sync/test'
+DIR_NAME = 'test'
 # Or simply
 # DIR_NAME = FULL_PATH.split('/')[-1]
 
@@ -216,7 +223,7 @@ def by_lines(input_str):
     return input_str.count(os.path.sep)
 
 
-def main():
+def start_sync():
     """Syncronizes computer folder with Google Drive folder.
 
     Checks files if they exist, uploads new files and subfolders,
@@ -386,6 +393,58 @@ def main():
         last_dir = folder_dir.split('/')[-1]
         folder_id = parents_id[last_dir]
         service.files().delete(fileId=folder_id).execute()
+
+def main():
+  parser_desc="One-way sync of a local folder to a folder on Google Drive"
+  parser = argparse.ArgumentParser(description=parser_desc)
+
+  parser.add_argument(
+    '--local-folder',
+    type = str,
+    help='Full path to local folder to sync',
+    required=True
+  )
+
+  parser.add_argument(
+    '--folder-name',
+    type = str,
+    help='Name of folder as it does/should appear in the root folder of your Google Drive account',
+    required=True
+  )
+
+  parser.add_argument(
+    '--log-file',
+    type = str,
+    default='drive-upload.log',
+    help='Path to log file (default=drive-upload.log)'
+  )
+
+  parser.add_argument(
+    '--log-level',
+    choices=[ 'DEBUG2', 'DEBUG', 'VERBOSE', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+    default='INFO',
+    type = str.upper,
+    help='Verbosity level (defualt=INFO)'
+  )
+
+  kwargs = vars(parser.parse_args())
+
+  if not os.access( kwargs.get('local_folder') , os.F_OK):
+    print( '"{}" does not exist. Quitting now.'.format(kwargs.get('local_folder')))
+    sys.exit(1)
+  if not os.access( kwargs.get('local_folder') , os.R_OK):
+    print( '"{}" is not readable. Check permissions. Quitting now.'.format(kwargs.get('local_folder')))
+    sys.exit(1)
+  if not  os.path.isdir( kwargs.get('local_folder') ):
+    print( '"{}" is not a folder. Quitting now.'.format(kwargs.get('local_folder')))
+    sys.exit(1)
+
+  if not re.search( '^[a-z0-9 _-]+$', kwargs.get('folder_name'), re.I):
+    print( 'Just to make things easier on me, only folder names matchng /^[a-z0-9 _-]+$/ are allowed. "{}" does not match. Quitting now.'.format(kwargs.get('folder_name')))
+    sys.exit(1)
+
+
+  # start_sync(kwargs)
 
 if __name__ == '__main__':
     main()
