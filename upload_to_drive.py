@@ -1,6 +1,8 @@
 #!/usr/bin/python3
-
-"""Example cooment to make pylint stop giving me errors."""
+#
+# 2019 Erik Meitner / Williamson Street Grocery Co-op
+# Adapted from the original here: https://github.com/dtsvetkov1/Google-Drive-sync
+#
 # TODO Make  command line arguments for folder path and name
 # TODO Add logging
 # TODO Add failure notifications
@@ -35,8 +37,8 @@ CLIENT_SECRET_FILE = 'client_secret.json'
 APPLICATION_NAME = 'Drive Sync'
 
 # Declare full path to folder and folder name
-FULL_PATH = r'/opt/Google-Drive-sync/test'
-DIR_NAME = 'test'
+FULL_PATH = r'PUT YOUR FULL FOLDER PATH HERE'
+DIR_NAME = 'PUT YOUR FOLDER NAME HERE'
 # Or simply
 # DIR_NAME = FULL_PATH.split('/')[-1]
 
