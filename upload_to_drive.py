@@ -247,7 +247,10 @@ def start_sync(settings):
 
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
-    service = discovery.build('drive', 'v3', http=http)
+
+    # added cache_discovery=False , otherwise it requires other Googlee modules.
+    # https://stackoverflow.com/questions/55561354/modulenotfounderror-no-module-named-google-appengine
+    service = discovery.build('drive', 'v3', http=http, cache_discovery=False)
 
     # Get id of Google Drive folder and it's path (from other script)
     # folder_id, full_path = initial_upload.check_upload(service)
