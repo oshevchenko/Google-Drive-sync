@@ -38,11 +38,6 @@ SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly',
 CLIENT_SECRET_FILE = 'client_secret.json'
 APPLICATION_NAME = 'Drive Sync'
 
-# Declare full path to folder and folder name
-FULL_PATH = r'PUT YOUR FULL FOLDER PATH HERE'
-DIR_NAME = 'PUT YOUR FOLDER NAME HERE'
-# Or simply
-# DIR_NAME = FULL_PATH.split('/')[-1]
 
 # Don't really need it here
 GOOGLE_MIME_TYPES = {
@@ -71,8 +66,10 @@ GOOGLE_MIME_TYPES = {
 # 'application/octet-stream': 'text/plain'
 
 
-def folder_upload(service):
+
+def folder_upload(service,settings):
     logger.debug('folder_upload()')
+
     '''Uploads folder and all it's content (if it doesnt exists)
     in root folder.
 
@@ -87,7 +84,7 @@ def folder_upload(service):
 
     parents_id = {}
 
-    for root, _, files in os.walk(FULL_PATH, topdown=True):
+    for root, _, files in os.walk(settings['local_folder'], topdown=True):
         last_dir = root.split('/')[-1]
         pre_last_dir = root.split('/')[-2]
         if pre_last_dir not in parents_id.keys():
@@ -116,7 +113,7 @@ def folder_upload(service):
     return parents_id
 
 
-def check_upload(service):
+def check_upload(service,settings):
     logger.debug('check_upload()')
 
     """Checks if folder is already uploaded,
@@ -139,16 +136,16 @@ def check_upload(service):
     logger.debug('check_upload() items={}'.format(items))
 
     # Check if folder exists, and then create it or get this folder's id.
-    if DIR_NAME in [item['name'] for item in items]:
+    if settings['folder_name'] in [item['name'] for item in items]:
         logger.debug('check_upload(): folder exists')
         folder_id = [item['id']for item in items
-                     if item['name'] == DIR_NAME][0]
+                     if item['name'] == settings['folder_name'] ][0]
     else:
-        parents_id = folder_upload(service)
-        folder_id = parents_id[DIR_NAME]
         logger.debug('check_upload(): folder does not exist')
+        parents_id = folder_upload(service,settings)
+        folder_id = parents_id[settings['folder_name']]
 
-    return folder_id, FULL_PATH
+    return folder_id
 
 
 
@@ -238,7 +235,7 @@ def by_lines(input_str):
     return input_str.count(os.path.sep)
 
 
-def start_sync():
+def start_sync(settings):
     global logger
 
     """Syncronizes computer folder with Google Drive folder.
@@ -254,8 +251,10 @@ def start_sync():
 
     # Get id of Google Drive folder and it's path (from other script)
     # folder_id, full_path = initial_upload.check_upload(service)
-    folder_id, full_path = check_upload(service)
+    folder_id = check_upload(service,settings)
     logger.debug('start_sync(): check_upload() returned folder_id={}'.format(folder_id))
+    full_path = settings['local_folder']
+
     folder_name = full_path.split(os.path.sep)[-1]
     logger.debug('start_sync(): folder_name={}'.format(folder_name))
     tree_list = []
@@ -435,36 +434,40 @@ def main():
   parser_desc="One-way sync of a local folder to a folder on Google Drive"
   parser = argparse.ArgumentParser(description=parser_desc)
 
-  parser.add_argument(
+  main_options = parser.add_argument_group('Sync options')
+  main_options.add_argument(
     '--local-folder',
     type = str,
     help='Full path to local folder to sync',
     required=True
   )
 
-  parser.add_argument(
+  main_options.add_argument(
     '--folder-name',
     type = str,
     help='Name of folder as it does/should appear in the root folder of your Google Drive account',
     required=True
   )
 
-  parser.add_argument(
+  main_options.add_argument(
     '--log-file',
     type = str,
-    default='drive-upload.log',
-    help='Path to log file (default=drive-upload.log)'
+    help='Path to log file'
   )
 
-  parser.add_argument(
+  main_options.add_argument(
     '--log-level',
-    choices=[ 'DEBUG2', 'DEBUG', 'VERBOSE', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+    choices=[  'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
     default='INFO',
     type = str.upper,
     help='Verbosity level (defualt=INFO)'
   )
 
-  kwargs = vars(parser.parse_args())
+  # Note that unknown arg are passed on in argv so that oauth2client options can
+  # be used also
+  kwa, remaining_argv = parser.parse_known_args()
+  kwargs = vars(kwa)
+  sys.argv=[sys.argv[0]]+remaining_argv
 
   if not os.access( kwargs.get('local_folder') , os.F_OK):
     print( '"{}" does not exist. Quitting now.'.format(kwargs.get('local_folder')))
@@ -480,10 +483,12 @@ def main():
     print( 'Just to make things easier on me, only folder names matchng /^[a-z0-9 _-]+$/ are allowed. "{}" does not match. Quitting now.'.format(kwargs.get('folder_name')))
     sys.exit(1)
 
+
+
   settings = {
-    'local_folder': kwargs.get('local_folder')
+    'local_folder': kwargs.get('local_folder').rstrip(os.path.sep)
     ,'folder_name': kwargs.get('folder_name')
-    ,'debug_level': kwargs.get('log_level')
+    ,'log_level': kwargs.get('log_level')
     ,'log_file': kwargs.get('log_file')
   }
 
