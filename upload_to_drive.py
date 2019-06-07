@@ -6,7 +6,8 @@
 # TODO Make  command line arguments for folder path and name
 # TODO Add logging
 # TODO Add failure notifications
-
+# TODO Fix problem caused when folder_name is not the same as local folder name
+#      See folder_upload() and check_upload()
 
 import argparse
 import datetime
@@ -26,8 +27,8 @@ from oauth2client import tools
 
 from oauth2client.file import Storage
 from apiclient.http import MediaFileUpload
-# Import our folder uploading script
-# import initial_upload
+
+logger = None
 
 # If modifying these scopes, delete your previously saved credentials
 # at ~/.credentials/drive-python-quickstart.json
@@ -71,6 +72,7 @@ GOOGLE_MIME_TYPES = {
 
 
 def folder_upload(service):
+    logger.debug('folder_upload()')
     '''Uploads folder and all it's content (if it doesnt exists)
     in root folder.
 
@@ -115,6 +117,8 @@ def folder_upload(service):
 
 
 def check_upload(service):
+    logger.debug('check_upload()')
+
     """Checks if folder is already uploaded,
     and if it's not, uploads it.
 
@@ -132,14 +136,17 @@ def check_upload(service):
         mimeType='application/vnd.google-apps.folder'").execute()
 
     items = results.get('files', [])
+    logger.debug('check_upload() items={}'.format(items))
 
     # Check if folder exists, and then create it or get this folder's id.
     if DIR_NAME in [item['name'] for item in items]:
+        logger.debug('check_upload(): folder exists')
         folder_id = [item['id']for item in items
                      if item['name'] == DIR_NAME][0]
     else:
         parents_id = folder_upload(service)
         folder_id = parents_id[DIR_NAME]
+        logger.debug('check_upload(): folder does not exist')
 
     return folder_id, FULL_PATH
 
@@ -155,6 +162,9 @@ def get_credentials():
     Returns:
         Credentials, the obtained credential.
     """
+    logger.debug('get_credentials()')
+
+    # FIXME - make location configurable for credentials
     home_dir = os.path.expanduser('~')
     credential_dir = os.path.join(home_dir, '.credentials')
     if not os.path.exists(credential_dir):
@@ -177,6 +187,8 @@ def get_credentials():
 
 
 def get_tree(folder_name, tree_list, root, parents_id, service):
+    logger.debug('get_tree() folder_name={}'.format(folder_name))
+
     """Gets folder tree relative paths.
 
     Recursively gets through subfolders, remembers their names ad ID's.
@@ -227,11 +239,15 @@ def by_lines(input_str):
 
 
 def start_sync():
+    global logger
+
     """Syncronizes computer folder with Google Drive folder.
 
     Checks files if they exist, uploads new files and subfolders,
     deletes old files from Google Drive and refreshes existing stuff.
     """
+    logger.debug('start_sync()')
+
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
     service = discovery.build('drive', 'v3', http=http)
@@ -239,13 +255,17 @@ def start_sync():
     # Get id of Google Drive folder and it's path (from other script)
     # folder_id, full_path = initial_upload.check_upload(service)
     folder_id, full_path = check_upload(service)
+    logger.debug('start_sync(): check_upload() returned folder_id={}'.format(folder_id))
     folder_name = full_path.split(os.path.sep)[-1]
+    logger.debug('start_sync(): folder_name={}'.format(folder_name))
     tree_list = []
     root = ''
     parents_id = {}
 
     parents_id[folder_name] = folder_id
     get_tree(folder_name, tree_list, root, parents_id, service)
+    logger.debug('start_sync(): get_tree() returned tree_list={}'.format(tree_list))
+
     os_tree_list = []
     root_len = len(full_path.split(os.path.sep)[0:-2])
 
@@ -272,6 +292,10 @@ def start_sync():
     # Here we upload new (abcent on Drive) folders
     for folder_dir in upload_folders:
         var = os.path.join(full_path.split(os.path.sep)[0:-1]) + os.path.sep
+        logger.debug('start_sync(): upload folders={}'.format(folder_dir))
+
+        logger.debug('start_sync(): var={}'.format(var))
+
         variable = var + folder_dir
         last_dir = folder_dir.split(os.path.sep)[-1]
         pre_last_dir = folder_dir.split(os.path.sep)[-2]
@@ -288,6 +312,7 @@ def start_sync():
         parents_id[last_dir] = folder_id
 
         for os_file in files:
+            logger.debug('start_sync(): upload file={}'.format(os_file))
             some_metadata = {'name': os_file, 'parents': [folder_id]}
             os_file_mimetype = mimetypes.MimeTypes().guess_type(
                 os.path.join(variable, os_file))[0]
@@ -348,6 +373,7 @@ def start_sync():
                 # print(drive_md5 != os_file_md5)
 
             if (file_time > drive_time) or (drive_md5 != os_file_md5):
+                logger.debug('start_sync(): update Drive file {}'.format(drive_file))
                 file_id = [f['id'] for f in items
                            if f['name'] == drive_file['name']][0]
                 file_mime = [f['mimeType'] for f in items
@@ -366,13 +392,14 @@ def start_sync():
 
         # Remove old files from Drive
         for drive_file in remove_files:
-
+            logger.debug('start_sync(): remove Drive file {}'.format(drive_file))
             file_id = [f['id'] for f in items
                        if f['name'] == drive_file['name']][0]
             service.files().delete(fileId=file_id).execute()
 
         # Upload new files on Drive
         for os_file in upload_files:
+            logger.debug('start_sync(): add Drive file {}'.format(os_file))
 
             file_dir = os.path.join(variable, os_file)
 
@@ -390,6 +417,8 @@ def start_sync():
 
     # Delete old folders from Drive
     for folder_dir in remove_folders:
+        logger.debug('start_sync(): remove Drive folder {}'.format(folder_dir))
+
         var = (os.path.sep).join(full_path.split(
             os.path.sep)[0:-1]) + os.path.sep
         variable = var + folder_dir
@@ -401,6 +430,8 @@ def start_sync():
 #
 #
 def main():
+  global logger
+
   parser_desc="One-way sync of a local folder to a folder on Google Drive"
   parser = argparse.ArgumentParser(description=parser_desc)
 
@@ -456,30 +487,24 @@ def main():
     ,'log_file': kwargs.get('log_file')
   }
 
-  log_setup = {
-    'format': '[%(levelname)s] %(message)s',
-    'level' : settings['log_level']
-  }
 
+  logger = logging.getLogger( 'fug.drivesync' )
+  logger.setLevel(settings['log_level'])
   if settings['log_file'] is not None:
-    log_setup['filename'] = settings['log_file']
-    log_setup['filemode'] = 'w'
+    sh = logging.FileHandler(settings['log_file'], mode='a')
+  else:
+    sh = logging.StreamHandler()
+  logformatter =  logging.Formatter(fmt='%(asctime)s [%(levelname)s] %(message)s')
+  sh.setFormatter(logformatter)
+  logger.addHandler(sh)
 
-  logging.addLevelName(5, 'DEBUG2')
-  logging.addLevelName(15, 'VERBOSE')
-  logging.basicConfig(**log_setup)
-  setattr(logging, 'debug2', lambda *args: logging.log(5, *args))
-  setattr(logging, 'verbose', lambda *args: logging.log(15, *args))
+  logger.debug('settings = {}'.format(settings))
 
-  # Only if we don't need a log file; otherwise we get double
-  # prints to stdout
-  if log_file is not None:
-    st_fmt = logging.Formatter(log_setup['format'])
-    stream = logging.StreamHandler(sys.stdout)
-    stream.setFormatter(st_fmt)
-    logging.getLogger().addHandler(stream)
+  logging.getLogger('googleapicliet.discovery_cache').setLevel(logging.DEBUG)
 
-  # start_sync(kwargs)
+  logger.debug('Starting.')
+
+  start_sync(settings)
 
 if __name__ == '__main__':
     main()
