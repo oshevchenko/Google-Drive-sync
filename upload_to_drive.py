@@ -431,87 +431,87 @@ def start_sync(settings):
 #
 #
 def main():
-  global logger
+    global logger
 
-  parser_desc="One-way sync of a local folder to a folder on Google Drive"
-  parser = argparse.ArgumentParser(description=parser_desc)
+    parser_desc="One-way sync of a local folder to a folder on Google Drive"
+    parser = argparse.ArgumentParser(description=parser_desc)
 
-  main_options = parser.add_argument_group('Sync options')
-  main_options.add_argument(
-    '--local-folder',
-    type = str,
-    help='Full path to local folder to sync',
-    required=True
-  )
+    main_options = parser.add_argument_group('Sync options')
+    main_options.add_argument(
+        '--local-folder',
+        type = str,
+        help='Full path to local folder to sync',
+        required=True
+    )
 
-  main_options.add_argument(
-    '--folder-name',
-    type = str,
-    help='Name of folder as it does/should appear in the root folder of your Google Drive account',
-    required=True
-  )
+    main_options.add_argument(
+        '--folder-name',
+        type = str,
+        help='Name of folder as it does/should appear in the root folder of your Google Drive account',
+        required=True
+    )
 
-  main_options.add_argument(
-    '--log-file',
-    type = str,
-    help='Path to log file'
-  )
+    main_options.add_argument(
+        '--log-file',
+        type = str,
+        help='Path to log file'
+    )
 
-  main_options.add_argument(
-    '--log-level',
-    choices=[  'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-    default='INFO',
-    type = str.upper,
-    help='Verbosity level (defualt=INFO)'
-  )
+    main_options.add_argument(
+        '--log-level',
+        choices=[  'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        default='INFO',
+        type = str.upper,
+        help='Verbosity level (defualt=INFO)'
+    )
 
-  # Note that unknown arg are passed on in argv so that oauth2client options can
-  # be used also
-  kwa, remaining_argv = parser.parse_known_args()
-  kwargs = vars(kwa)
-  sys.argv=[sys.argv[0]]+remaining_argv
+    # Note that unknown arg are passed on in argv so that oauth2client options can
+    # be used also
+    kwa, remaining_argv = parser.parse_known_args()
+    kwargs = vars(kwa)
+    sys.argv=[sys.argv[0]]+remaining_argv
 
-  if not os.access( kwargs.get('local_folder') , os.F_OK):
-    print( '"{}" does not exist. Quitting now.'.format(kwargs.get('local_folder')))
-    sys.exit(1)
-  if not os.access( kwargs.get('local_folder') , os.R_OK):
-    print( '"{}" is not readable. Check permissions. Quitting now.'.format(kwargs.get('local_folder')))
-    sys.exit(1)
-  if not  os.path.isdir( kwargs.get('local_folder') ):
-    print( '"{}" is not a folder. Quitting now.'.format(kwargs.get('local_folder')))
-    sys.exit(1)
+    if not os.access( kwargs.get('local_folder') , os.F_OK):
+        print( '"{}" does not exist. Quitting now.'.format(kwargs.get('local_folder')))
+        sys.exit(1)
+    if not os.access( kwargs.get('local_folder') , os.R_OK):
+        print( '"{}" is not readable. Check permissions. Quitting now.'.format(kwargs.get('local_folder')))
+        sys.exit(1)
+    if not  os.path.isdir( kwargs.get('local_folder') ):
+        print( '"{}" is not a folder. Quitting now.'.format(kwargs.get('local_folder')))
+        sys.exit(1)
 
-  if not re.search( '^[a-z0-9 _-]+$', kwargs.get('folder_name'), re.I):
-    print( 'Just to make things easier on me, only folder names matchng /^[a-z0-9 _-]+$/ are allowed. "{}" does not match. Quitting now.'.format(kwargs.get('folder_name')))
-    sys.exit(1)
-
-
-
-  settings = {
-    'local_folder': kwargs.get('local_folder').rstrip(os.path.sep)
-    ,'folder_name': kwargs.get('folder_name')
-    ,'log_level': kwargs.get('log_level')
-    ,'log_file': kwargs.get('log_file')
-  }
+    if not re.search( '^[a-z0-9 _-]+$', kwargs.get('folder_name'), re.I):
+        print( 'Just to make things easier on me, only folder names matchng /^[a-z0-9 _-]+$/ are allowed. "{}" does not match. Quitting now.'.format(kwargs.get('folder_name')))
+        sys.exit(1)
 
 
-  logger = logging.getLogger( 'fug.drivesync' )
-  logger.setLevel(settings['log_level'])
-  if settings['log_file'] is not None:
-    sh = logging.FileHandler(settings['log_file'], mode='a')
-  else:
-    sh = logging.StreamHandler()
-  logformatter =  logging.Formatter(fmt='%(asctime)s [%(levelname)s] %(message)s')
-  sh.setFormatter(logformatter)
-  logger.addHandler(sh)
 
-  logger.debug('settings = {}'.format(settings))
+    settings = {
+        'local_folder': kwargs.get('local_folder').rstrip(os.path.sep)
+        ,'folder_name': kwargs.get('folder_name')
+        ,'log_level': kwargs.get('log_level')
+        ,'log_file': kwargs.get('log_file')
+    }
 
-  logging.getLogger('googleapicliet.discovery_cache').setLevel(logging.DEBUG)
 
-  logger.debug('Starting.')
+    logger = logging.getLogger( 'fug.drivesync' )
+    logger.setLevel(settings['log_level'])
+    if settings['log_file'] is not None:
+        sh = logging.FileHandler(settings['log_file'], mode='a')
+    else:
+        sh = logging.StreamHandler()
+    logformatter =  logging.Formatter(fmt='%(asctime)s [%(levelname)s] %(message)s')
+    sh.setFormatter(logformatter)
+    logger.addHandler(sh)
 
-  start_sync(settings)
+    logger.debug('settings = {}'.format(settings))
+
+    logging.getLogger('googleapicliet.discovery_cache').setLevel(logging.DEBUG)
+
+    logger.debug('Starting.')
+
+    start_sync(settings)
 
 if __name__ == '__main__':
     main()
