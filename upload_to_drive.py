@@ -293,10 +293,9 @@ def start_sync(settings):
 
     # Here we upload new (absent on Drive) folders
     for folder_dir in upload_folders:
-        var = os.path.join(full_path.split(os.path.sep)[0:-1]) + os.path.sep
         logger.debug('start_sync(): upload folders={}'.format(folder_dir))
 
-        logger.debug('start_sync(): var={}'.format(var))
+        var = os.path.sep.join(full_path.split(os.path.sep)[0:-1]) + os.path.sep
 
         variable = var + folder_dir
         last_dir = folder_dir.split(os.path.sep)[-1]
