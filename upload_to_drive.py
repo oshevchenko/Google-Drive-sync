@@ -3,8 +3,6 @@
 # 2019 Erik Meitner / Williamson Street Grocery Co-op
 # Adapted from the original here: https://github.com/dtsvetkov1/Google-Drive-sync
 #
-# TODO Make  command line arguments for folder path and name
-# TODO Add logging
 # TODO Add failure notifications
 # TODO Fix problem caused when folder_name is not the same as local folder name
 #      See folder_upload() and check_upload()
@@ -23,7 +21,6 @@ import logging
 from apiclient import discovery
 from oauth2client import client
 from oauth2client import tools
-# from oauth2client.tools import run
 
 from oauth2client.file import Storage
 from apiclient.http import MediaFileUpload
@@ -174,11 +171,7 @@ def get_credentials():
     if not credentials or credentials.invalid:
         flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES)
         flow.user_agent = APPLICATION_NAME
-        # if flags:
         credentials = tools.run_flow(flow, store, flags=None)
-        # else:  # Needed only for compatibility with Python 2.6
-        # flags = None
-        # credentials = tools.run_flow(flow, store, flags)
         print('Storing credentials to ', credential_path)
     return credentials
 
@@ -333,7 +326,6 @@ def start_sync(settings):
 
         variable = var + folder_dir
         last_dir = folder_dir.split(os.path.sep)[-1]
-        # print(last_dir, folder_dir)
         os_files = [f for f in os.listdir(variable)
                     if os.path.isfile(os.path.join(variable, f))]
         results = service.files().list(
