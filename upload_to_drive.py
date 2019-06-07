@@ -288,7 +288,7 @@ def start_sync(settings):
     # so now in can be upload from top to down of tree
     upload_folders = sorted(upload_folders, key=by_lines)
 
-    # Here we upload new (abcent on Drive) folders
+    # Here we upload new (absent on Drive) folders
     for folder_dir in upload_folders:
         var = os.path.join(full_path.split(os.path.sep)[0:-1]) + os.path.sep
         logger.debug('start_sync(): upload folders={}'.format(folder_dir))
