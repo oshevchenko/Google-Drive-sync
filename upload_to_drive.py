@@ -4,8 +4,9 @@
 # Adapted from the original here: https://github.com/dtsvetkov1/Google-Drive-sync
 #
 # TODO Add failure notifications
-# TODO Fix problem caused when folder_name is not the same as local folder name
-#      See folder_upload() and check_upload()
+# TODO Add option to use a different folder name for top level folder on Drive
+# TODO refactor so there is a single function for each of the basic tasks:
+#       uploads files, creates folders, lists files, etc.
 
 import argparse
 import datetime
