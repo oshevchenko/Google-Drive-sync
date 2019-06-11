@@ -436,12 +436,12 @@ def main():
         required=True
     )
 
-    main_options.add_argument(
-        '--folder-name',
-        type = str,
-        help='Name of folder as it does/should appear in the root folder of your Google Drive account',
-        required=True
-    )
+    # main_options.add_argument(
+    #     '--folder-name',
+    #     type = str,
+    #     help='Name of folder as it does/should appear in the root folder of your Google Drive account',
+    #     required=True
+    # )
 
     main_options.add_argument(
         '--log-file',
@@ -473,15 +473,15 @@ def main():
         print( '"{}" is not a folder. Quitting now.'.format(kwargs.get('local_folder')))
         sys.exit(1)
 
-    if not re.search( '^[a-z0-9 _-]+$', kwargs.get('folder_name'), re.I):
-        print( 'Just to make things easier on me, only folder names matchng /^[a-z0-9 _-]+$/ are allowed. "{}" does not match. Quitting now.'.format(kwargs.get('folder_name')))
-        sys.exit(1)
+    # if not re.search( '^[a-z0-9 _-]+$', kwargs.get('folder_name'), re.I):
+    #     print( 'Just to make things easier on me, only folder names matchng /^[a-z0-9 _-]+$/ are allowed. "{}" does not match. Quitting now.'.format(kwargs.get('folder_name')))
+    #     sys.exit(1)
 
 
 
     settings = {
         'local_folder': kwargs.get('local_folder').rstrip(os.path.sep)
-        ,'folder_name': kwargs.get('folder_name')
+        ,'folder_name': kwargs.get('local_folder').rstrip(os.path.sep).split(os.path.sep)[-1]
         ,'log_level': kwargs.get('log_level')
         ,'log_file': kwargs.get('log_file')
     }
