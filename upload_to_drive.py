@@ -181,8 +181,8 @@ def get_credentials():
     return credentials
 
 
-def get_tree(folder_name, tree_list, root, parents_id, service):
-    logger.debug('get_tree() folder_name={}'.format(folder_name))
+def get_drive_tree(folder_name, tree_list, root, parents_id, service):
+    logger.debug('get_drive_tree() folder_name={}'.format(folder_name))
 
     """Gets folder tree relative paths.
 
@@ -220,7 +220,7 @@ def get_tree(folder_name, tree_list, root, parents_id, service):
         folder_id = [i['id'] for i in items
                      if i['name'] == item['name']][0]
         folder_name = item['name']
-        get_tree(folder_name, tree_list,
+        get_drive_tree(folder_name, tree_list,
                  root, parents_id, service)
 
 
@@ -263,8 +263,8 @@ def start_sync(settings):
     parents_id = {}
 
     parents_id[folder_name] = folder_id
-    get_tree(folder_name, tree_list, root, parents_id, service)
-    logger.debug('start_sync(): get_tree() returned tree_list={}'.format(tree_list))
+    get_drive_tree(folder_name, tree_list, root, parents_id, service)
+    logger.debug('start_sync(): get_drive_tree() returned tree_list={}'.format(tree_list))
 
     os_tree_list = []
     root_len = len(full_path.split(os.path.sep)[0:-2])
