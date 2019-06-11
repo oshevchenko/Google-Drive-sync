@@ -93,7 +93,7 @@ def folder_upload(service,settings):
         folder_metadata = {'name': last_dir,
                            'parents': [pre_last_dir],
                            'mimeType': 'application/vnd.google-apps.folder'}
-        logger.debug('check_upload() Create Drive folder {}'.format(last_dir))
+        logger.debug('folder_upload() Create Drive folder {}'.format(last_dir))
 
         create_folder = service.files().create(body=folder_metadata,
                                                fields='id').execute()
@@ -104,7 +104,7 @@ def folder_upload(service,settings):
             media = MediaFileUpload(
                 os.path.join(root, name),
                 mimetype=mimetypes.MimeTypes().guess_type(name)[0])
-            logger.debug('check_upload() Upload to Drive: {}'.format(name))
+            logger.debug('folder_upload() Upload to Drive: {}'.format(name))
 
             service.files().create(body=file_metadata,
                                    media_body=media,
