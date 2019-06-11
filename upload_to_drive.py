@@ -82,8 +82,8 @@ def folder_upload(service,settings):
     parents_id = {}
 
     for root, _, files in os.walk(settings['local_folder'], topdown=True):
-        last_dir = root.split('/')[-1]
-        pre_last_dir = root.split('/')[-2]
+        last_dir = root.split(os.path.sep)[-1]
+        pre_last_dir = root.split(os.path.sep)[-2]
         if pre_last_dir not in parents_id.keys():
             pre_last_dir = []
         else:
@@ -415,7 +415,7 @@ def start_sync(settings):
         var = (os.path.sep).join(full_path.split(
             os.path.sep)[0:-1]) + os.path.sep
         variable = var + folder_dir
-        last_dir = folder_dir.split('/')[-1]
+        last_dir = folder_dir.split(os.path.sep)[-1]
         folder_id = parents_id[last_dir]
         service.files().delete(fileId=folder_id).execute()
 
